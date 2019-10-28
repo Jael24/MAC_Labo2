@@ -6,13 +6,12 @@ import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class Evaluation {
 
@@ -137,18 +136,25 @@ public class Evaluation {
         ///  precision, recall,...
         ///
 
+
         // TODO student
         // compute the metrics asked in the instructions
         // you may want to call these methods to get:
         // -  The query results returned by Lucene i.e. computed/empirical
         //    documents retrieved
-        //        List<Integer> queryResults = lab2Index.search(query);
-        //
-        // - The true query results from qrels file i.e. genuine documents
-        //   returned matching a query
-        //        List<Integer> qrelResults = qrels.get(queryNumber);
 
-        int queryNumber = 0;
+
+
+
+
+        //
+        //
+
+
+
+        //
+
+        int queryNumber = 1;
         int totalRelevantDocs = 0;
         int totalRetrievedDocs = 0;
         int totalRetrievedRelevantDocs = 0;
@@ -161,16 +167,37 @@ public class Evaluation {
         // average precision at the 11 recall levels (0,0.1,0.2,...,1) over all queries
         double[] avgPrecisionAtRecallLevels = createZeroedRecalls();
 
-        ///
-        ///  Part IV - Display the metrics
-        ///
+        for(String query:queries) {
 
-        //TODO student implement what is needed (i.e. the metrics) to be able
-        // to display the results
-        displayMetrics(totalRetrievedDocs, totalRelevantDocs,
-                totalRetrievedRelevantDocs, avgPrecision, avgRecall, fMeasure,
-                meanAveragePrecision, avgRPrecision,
-                avgPrecisionAtRecallLevels);
+            List<Integer> queryResults = lab2Index.search(query);
+            totalRetrievedDocs = queryResults.size();
+
+
+            // - The true query results from qrels file i.e. genuine documents
+            //   returned matching a query
+
+            List<Integer> qrelResults = qrels.get(queryNumber);
+            totalRelevantDocs = qrelResults.size();
+            ++queryNumber;
+
+            totalRetrievedRelevantDocs = queryResults.stream()
+                    .distinct()
+                    .filter(qrelResults::contains)
+                    .collect(Collectors.toList())
+                    .size();
+
+
+            ///
+            ///  Part IV - Display the metrics
+            ///
+
+            //TODO student implement what is needed (i.e. the metrics) to be able
+            // to display the results
+            displayMetrics(totalRetrievedDocs, totalRelevantDocs,
+                    totalRetrievedRelevantDocs, avgPrecision, avgRecall, fMeasure,
+                    meanAveragePrecision, avgRPrecision,
+                    avgPrecisionAtRecallLevels);
+        }
     }
 
     private static void displayMetrics(
