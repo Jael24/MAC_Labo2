@@ -169,35 +169,52 @@ public class Evaluation {
 
         for(String query:queries) {
 
+
+            // listes de queries
             List<Integer> queryResults = lab2Index.search(query);
+
+            // nombre de retrieved documents
             totalRetrievedDocs = queryResults.size();
 
+            if(qrels.get(queryNumber) != null) {
 
-            // - The true query results from qrels file i.e. genuine documents
-            //   returned matching a query
+                List<Integer> qrelResults = qrels.get(queryNumber);
 
-            List<Integer> qrelResults = qrels.get(queryNumber);
-            totalRelevantDocs = qrelResults.size();
-            ++queryNumber;
+                // nombre de relevant documents
+                totalRelevantDocs += qrelResults.size();
 
-            totalRetrievedRelevantDocs = queryResults.stream()
-                    .distinct()
-                    .filter(qrelResults::contains)
-                    .collect(Collectors.toList())
-                    .size();
+                // nombre de retrieved relevant document ( intersection des retrieved et des relevant)
+                totalRetrievedRelevantDocs += queryResults.stream()
+                        .distinct()
+                        .filter(qrelResults::contains)
+                        .collect(Collectors.toList())
+                        .size();
+
+                // moyenne de la precision pour toutes queries
+                avgPrecision += (totalRetrievedRelevantDocs / (double)totalRetrievedDocs);
+
+                // moyenne du rappel pour toutes queries
+                avgRecall += (totalRetrievedRelevantDocs / (avgQrels * qrels.size()));
 
 
-            ///
-            ///  Part IV - Display the metrics
-            ///
+                ///
+                ///  Part IV - Display the metrics
+                ///
 
-            //TODO student implement what is needed (i.e. the metrics) to be able
-            // to display the results
-            displayMetrics(totalRetrievedDocs, totalRelevantDocs,
-                    totalRetrievedRelevantDocs, avgPrecision, avgRecall, fMeasure,
-                    meanAveragePrecision, avgRPrecision,
-                    avgPrecisionAtRecallLevels);
+                //TODO student implement what is needed (i.e. the metrics) to be able
+                // to display the results
+                displayMetrics(totalRetrievedDocs, totalRelevantDocs,
+                        totalRetrievedRelevantDocs, avgPrecision, avgRecall, fMeasure,
+                        meanAveragePrecision, avgRPrecision,
+                        avgPrecisionAtRecallLevels);
+
+            }
+                ++queryNumber;
+                System.out.println(queryNumber);
+
         }
+        System.out.println("La precision moyenne pour toutes queries est de " + avgPrecision/qrels.size());
+        System.out.println("Le rappel moyen pour toutes queries est de      " + avgRecall/qrels.size());
     }
 
     private static void displayMetrics(
