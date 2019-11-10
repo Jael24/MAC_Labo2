@@ -118,9 +118,8 @@ public class Evaluation {
         ///
         ///  Part I - Select an analyzer
         ///
-        // TODO student: compare Analyzers here i.e. change analyzer to
-        // the asked analyzers once the metrics have been implemented
-        analyzer = new WhitespaceAnalyzer();
+        analyzer = new StandardAnalyzer();
+        //analyzer = new WhitespaceAnalyzer();
 
 
         ///
@@ -137,23 +136,6 @@ public class Evaluation {
         ///
 
 
-        // TODO student
-        // compute the metrics asked in the instructions
-        // you may want to call these methods to get:
-        // -  The query results returned by Lucene i.e. computed/empirical
-        //    documents retrieved
-
-
-
-
-
-        //
-        //
-
-
-
-        //
-
         int queryNumber = 1;
         int totalRelevantDocs = 0;
         int totalRetrievedDocs = 0;
@@ -163,58 +145,101 @@ public class Evaluation {
         double avgRecall = 0.0;
         double meanAveragePrecision = 0.0;
         double fMeasure = 0.0;
-
         // average precision at the 11 recall levels (0,0.1,0.2,...,1) over all queries
         double[] avgPrecisionAtRecallLevels = createZeroedRecalls();
 
+        // For avgPrecision
+        double addPrecision = 0.0;
+
+        // For avgRecall
+        double addRecall = 0.0;
+
+        // For AP
+        double addAP = 0.0;
+        double AP = 0.0;
+
+        // For MAP
+        double sumOfAP = 0.0;
+
         for(String query:queries) {
-
-
-            // listes de queries
+            // queryResults contient les documents remontés pour chaque query
             List<Integer> queryResults = lab2Index.search(query);
 
             // nombre de retrieved documents
-            totalRetrievedDocs = queryResults.size();
+            totalRetrievedDocs += queryResults.size();
+
+            double precision = 0.0;
+            double recall = 0.0;
+
+            int truePositive = 0;
+            int falsePositive = 0;
+            int tpPlusFn = 0;
 
             if(qrels.get(queryNumber) != null) {
-
                 List<Integer> qrelResults = qrels.get(queryNumber);
-
                 // nombre de relevant documents
                 totalRelevantDocs += qrelResults.size();
 
+                tpPlusFn = qrelResults.size();
+
                 // nombre de retrieved relevant document ( intersection des retrieved et des relevant)
-                totalRetrievedRelevantDocs += queryResults.stream()
+                truePositive = queryResults.stream()
                         .distinct()
                         .filter(qrelResults::contains)
                         .collect(Collectors.toList())
                         .size();
 
-                // moyenne de la precision pour toutes queries
-                avgPrecision += (totalRetrievedRelevantDocs / (double)totalRetrievedDocs);
 
-                // moyenne du rappel pour toutes queries
-                avgRecall += (totalRetrievedRelevantDocs / (avgQrels * qrels.size()));
+                totalRetrievedRelevantDocs += truePositive;
 
+                //Calcul de AP (Average Precision)
+                int cntRetrieved = 1;
 
-                ///
-                ///  Part IV - Display the metrics
-                ///
+                for (int i = 1; i <= 3204; ++i) {
+                    if (queryResults.contains(i)) {
+                        addAP += ((double)cntRetrieved/(double)i);
+                        cntRetrieved++;
+                    }
+                }
 
-                //TODO student implement what is needed (i.e. the metrics) to be able
-                // to display the results
-                displayMetrics(totalRetrievedDocs, totalRelevantDocs,
-                        totalRetrievedRelevantDocs, avgPrecision, avgRecall, fMeasure,
-                        meanAveragePrecision, avgRPrecision,
-                        avgPrecisionAtRecallLevels);
+                // On divise la somme des précision par ne nombre de document pertinent dans la collection
+                AP = addAP / qrels.size();
 
             }
-                ++queryNumber;
-                System.out.println(queryNumber);
+            falsePositive = queryResults.size() - truePositive;
 
+            precision = (double)truePositive / (double)(truePositive + falsePositive);
+            addPrecision += precision;
+
+            if (tpPlusFn != 0) {
+                recall = (double) truePositive / (double) tpPlusFn;
+            } else {
+                recall = 0;
+            }
+            addRecall += recall;
+
+
+
+            sumOfAP += AP;
+
+            ++queryNumber;
         }
-        System.out.println("La precision moyenne pour toutes queries est de " + avgPrecision/qrels.size());
-        System.out.println("Le rappel moyen pour toutes queries est de      " + avgRecall/qrels.size());
+
+        meanAveragePrecision = sumOfAP / queries.size();
+
+        avgPrecision = addPrecision / queries.size();
+        avgRecall = addRecall / queries.size();
+        fMeasure = (2*avgPrecision*avgRecall) / (avgPrecision+avgRecall);
+
+        displayMetrics(totalRetrievedDocs,
+                totalRelevantDocs,
+                totalRetrievedRelevantDocs,
+                avgPrecision,
+                avgRecall,
+                fMeasure,
+                meanAveragePrecision,
+                avgRPrecision,
+                avgPrecisionAtRecallLevels);
     }
 
     private static void displayMetrics(
