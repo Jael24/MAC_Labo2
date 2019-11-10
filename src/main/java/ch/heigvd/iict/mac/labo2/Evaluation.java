@@ -156,7 +156,7 @@ public class Evaluation {
 
         // For AP
         double addAP = 0.0;
-        double AP = 0.0;
+
 
         // For MAP
         double sumOfAP = 0.0;
@@ -174,6 +174,8 @@ public class Evaluation {
             int truePositive = 0;
             int falsePositive = 0;
             int tpPlusFn = 0;
+
+            double AP = 0.0;
 
             if(qrels.get(queryNumber) != null) {
                 List<Integer> qrelResults = qrels.get(queryNumber);
@@ -193,17 +195,20 @@ public class Evaluation {
                 totalRetrievedRelevantDocs += truePositive;
 
                 //Calcul de AP (Average Precision)
+                addAP = 0.0;
                 int cntRetrieved = 1;
 
-                for (int i = 1; i <= 3204; ++i) {
-                    if (queryResults.contains(i)) {
+
+                for (int i = 1; i < queryResults.size(); ++i) {
+                    if (qrelResults.contains(queryResults.get(i))) {
                         addAP += ((double)cntRetrieved/(double)i);
                         cntRetrieved++;
                     }
                 }
 
                 // On divise la somme des précision par ne nombre de document pertinent dans la collection
-                AP = addAP / qrels.size();
+                AP = addAP / qrelResults.size();
+                //AP = addAP / queryResults.size();
 
             }
             falsePositive = queryResults.size() - truePositive;
@@ -217,8 +222,6 @@ public class Evaluation {
                 recall = 0;
             }
             addRecall += recall;
-
-
 
             sumOfAP += AP;
 
