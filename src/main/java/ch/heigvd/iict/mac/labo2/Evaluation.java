@@ -161,6 +161,9 @@ public class Evaluation {
         // For MAP
         double sumOfAP = 0.0;
 
+        // For R-precision
+        double R_Precision = 0.0;
+
         for(String query:queries) {
             // queryResults contient les documents remontés pour chaque query
             List<Integer> queryResults = lab2Index.search(query);
@@ -196,16 +199,19 @@ public class Evaluation {
 
                 //Calcul de AP (Average Precision)
                 addAP = 0.0;
-                int cntRetrieved = 1;
+                int cntRetrieved = 0;
 
 
-                for (int i = 1; i < queryResults.size(); ++i) {
+                for (int i = 0; i < queryResults.size(); ++i) {
                     if (qrelResults.contains(queryResults.get(i))) {
-                        addAP += ((double)cntRetrieved/(double)i);
-                        cntRetrieved++;
+                        addAP += ((double)++cntRetrieved/(double)(i+1));
+                    }
+
+                    if (i+1 == qrelResults.size()) {
+                        R_Precision += (double)cntRetrieved / (double) qrelResults.size();
                     }
                 }
-
+                
                 // On divise la somme des précision par ne nombre de document pertinent dans la collection
                 AP = addAP / qrelResults.size();
                 //AP = addAP / queryResults.size();
@@ -229,6 +235,7 @@ public class Evaluation {
         }
 
         meanAveragePrecision = sumOfAP / queries.size();
+        avgRPrecision = R_Precision / queries.size();
 
         avgPrecision = addPrecision / queries.size();
         avgRecall = addRecall / queries.size();
